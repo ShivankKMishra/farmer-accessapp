@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiRequest } from './queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,11 +29,20 @@ interface AuthContextType {
   updateProfile: (userData: Partial<User>) => Promise<boolean>;
 }
 
-// Create the Auth Context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create the Auth Context with default values
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  login: async () => false,
+  phoneLogin: async () => false,
+  register: async () => false,
+  logout: () => {},
+  updateProfile: async () => false,
+});
 
 // Auth Provider Component
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -73,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       const response = await apiRequest('POST', '/api/auth/login', { username, password });
@@ -100,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const phoneLogin = async (phone: string) => {
+  const phoneLogin = async (phone: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       const response = await apiRequest('POST', '/api/auth/phone-login', { phone });
@@ -127,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (userData: any) => {
+  const register = async (userData: any): Promise<boolean> => {
     try {
       setIsLoading(true);
       const response = await apiRequest('POST', '/api/auth/register', userData);
@@ -154,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = (): void => {
     localStorage.removeItem('token');
     setUser(null);
     
@@ -164,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateProfile = async (userData: Partial<User>) => {
+  const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
@@ -213,27 +222,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      isLoading,
-      login,
-      phoneLogin,
-      register,
-      logout,
-      updateProfile,
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    login,
+    phoneLogin,
+    register,
+    logout,
+    updateProfile,
+  };
+
+  return React.createElement(AuthContext.Provider, { value }, children);
 }
 
 // Custom hook to use auth context
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+export function useAuth(): AuthContextType {
+  return useContext(AuthContext);
 }
