@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const authRoutes = require('./auth');
-const weatherHandler = require('./weather');
 
 // Create Express app
 const app = express();
@@ -14,10 +13,10 @@ app.use(bodyParser.json());
 
 // Routes for Vercel deployment
 app.use('/api/auth', authRoutes);
-app.get('/api/weather', weatherHandler);
 
 // Import other routes as needed
 // app.use('/api/products', require('./products'));
+// app.use('/api/weather', require('./weather'));
 
 // Fallback to server/routes.ts in development environment
 if (process.env.NODE_ENV !== 'production') {
